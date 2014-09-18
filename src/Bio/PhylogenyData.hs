@@ -1,6 +1,6 @@
 -- | This module contains data structures for phylogeny data
 
-module Bio.TaxonomyData where
+module Bio.PhylogenyData where
 import Data.Tree
 
 data PhylogenyNode = SimpleTaxDumpNode
