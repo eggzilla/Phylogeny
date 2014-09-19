@@ -69,8 +69,8 @@ genParserNewickLeaf = do
 genParserPhylogenyNode = do
   nodeId <- optionMaybe (many1 (noneOf ":,()"))
   optional (char ':')
-  nodeDistance <- optionMaybe (many1 (choice [digit, char '.']))
-  optional (char ',')
+  nodeDistance <- optionMaybe (many (choice [digit, char '.']))
+  (char ',')
   return $ PhylogenyNode nodeId (liftM readDouble nodeDistance) 
 
 
