@@ -3,11 +3,11 @@
 module Bio.PhylogenyData where
 import Data.Tree
 
-data PhylogenyNode = SimpleTaxDumpNode
+data PhylogenyNode = PhylogenyNode
   {
    -- node id in GenBank
-   phylogenyId :: String,
+   phylogenyId :: Maybe String,
    -- parent node id in GenBank taxonomy database
-   distance :: Double
+   distance :: Maybe Double
   }
   deriving (Show, Read, Eq)
