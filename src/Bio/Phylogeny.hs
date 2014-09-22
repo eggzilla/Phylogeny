@@ -45,7 +45,7 @@ genParserNewickSubTreeLeft = do
   char '('
   optional (char '\n')
   subtree <- try genParserNewickTree
-  char ')'
+  --char ')'
   optional (char ',')
   optional (char '\n')
   return $ Node (Just leaf1) subtree
@@ -56,7 +56,7 @@ genParserNewickSubTreeRight = do
   char '('
   optional (char '\n')
   subtree <- try genParserNewickTree
-  char ')'
+  --char ')'
   optional (char '\n')
   leaf1 <- try genParserPhylogenyNode
   optional (char ',')
@@ -69,7 +69,7 @@ genParserNewickBranch = do
   char '('
   optional (char '\n')
   subtree <- try genParserNewickTree
-  char ')'
+  --char ')'
   optional (char '\n')
   optional (char ',')
   optional (char '\n')
@@ -79,7 +79,7 @@ genParserNewickBranch = do
 genParserNewickLeaf :: GenParser Char st (Tree (Maybe PhylogenyNode))
 genParserNewickLeaf = do
   leaf1 <- try genParserPhylogenyNode
-  optional (char ',')
+  choice [try (char ','), try (char ')'), try (char '('), try (lookAhead (char ';'))]
   optional (char '\n')
   return $ Node (Just leaf1) []
 
