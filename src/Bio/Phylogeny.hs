@@ -30,11 +30,12 @@ readNewick filePath = parseFromFile genParserNewickFormat filePath
 genParserNewickFormat = do
   tree <- genParserNewickTree 
   char ';'
+  optional eof
   return tree
 
 --genParserNewickTree :: GenParser Char st Tree PhylogenyNode
 genParserNewickTree = do
-  subtrees <- many (choice [(try genParserNewickSubTreeLeft), (try genParserNewickSubTreeRight), (try genParserNewickLeaf)])
+  subtrees <- many (choice [(try genParserNewickSubTreeLeft), (try genParserNewickSubTreeRight), (try genParserNewickLeaf), (try genParserNewickBranch)])
   return subtrees
 
 --Tree Leaf [x,..]
@@ -42,37 +43,52 @@ genParserNewickTree = do
 genParserNewickSubTreeLeft = do 
   leaf1 <- try genParserPhylogenyNode
   char '('
+  optional (char '\n')
   subtree <- try genParserNewickTree
   char ')'
   optional (char ',')
-  return $ Node leaf1 subtree
+  optional (char '\n')
+  return $ Node (Just leaf1) subtree
 
 --Tree Leaf [x,..]
 --genParserNewickSubTreeRight :: GenParser Char st Tree PhylogenyNode []
 genParserNewickSubTreeRight = do
   char '('
+  optional (char '\n')
   subtree <- try genParserNewickTree
   char ')'
+  optional (char '\n')
   leaf1 <- try genParserPhylogenyNode
   optional (char ',')
-  return $ Node leaf1 subtree
+  optional (char '\n')
+  return $ Node (Just leaf1) subtree
+
+genParserNewickBranch = do
+  char '('
+  optional (char '\n')
+  subtree <- try genParserNewickTree
+  char ')'
+  optional (char '\n')
+  optional (char ',')
+  optional (char '\n')
+  return $ Node Nothing subtree
 
 --Tree Leaf []
 --genParserNewickLeaf :: GenParser Char st Tree PhylogenyNode []
 genParserNewickLeaf = do
   leaf1 <- try genParserPhylogenyNode
   optional (char ',')
-  return $ Node leaf1 []
+  optional (char '\n')
+  return $ Node (Just leaf1) []
 
 --Tree Leaf []
 --genParserPhylogenyNode:: GenParser Char st PhylogenyNode
 genParserPhylogenyNode = do
-  nodeId <- optionMaybe (many1 (noneOf ":,()"))
-  optional (char ':')
+  nodeId <- optionMaybe (try (many (choice [alphaNum,(oneOf "./|_-")])))
+  (char ':')
   nodeDistance <- optionMaybe (many (choice [digit, char '.']))
-  (char ',')
-  return $ PhylogenyNode nodeId (liftM readDouble nodeDistance) 
-
+  choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
+  return $ PhylogenyNode nodeId (liftM readDouble nodeDistance)
 
 ---------------------------
 --Auxiliary functions:
