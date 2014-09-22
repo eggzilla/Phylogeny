@@ -1,3 +1,4 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
 -- | Parse and process phylogeny data
 
 module Bio.Phylogeny (                      
@@ -26,71 +27,93 @@ parseNewick input = parse genParserNewickFormat "parseNewickFormat" input
 -- | Parse  from input filePath                        
 readNewick filePath = parseFromFile genParserNewickFormat filePath
 
-genParserNewickFormat :: GenParser Char st [Tree (Maybe PhylogenyNode)]
+genParserNewickFormat :: GenParser Char st [Tree PhylogenyNode]
 genParserNewickFormat = do
   tree <- genParserNewickTree 
   char ';'
   optional eof
   return tree
 
-genParserNewickTree :: GenParser Char st [Tree (Maybe PhylogenyNode)]
+genParserNewickTree :: GenParser Char st [Tree PhylogenyNode]
 genParserNewickTree = do
-  subtrees <- many (choice [(try genParserNewickSubTreeLeft), (try genParserNewickSubTreeRight), (try genParserNewickLeaf), (try genParserNewickBranch)])
+  subtrees <- many (choice [(try genParserNewickLeaf),(try genParserNewickSubTreeRight), (try genParserNewickSubTreeLeft), (try genParserNewickBranch)])
   return subtrees
 
 --Tree Leaf [x,..]
-genParserNewickSubTreeLeft :: GenParser Char st (Tree (Maybe PhylogenyNode))
+genParserNewickSubTreeLeft :: GenParser Char st (Tree PhylogenyNode)
 genParserNewickSubTreeLeft = do 
-  leaf1 <- try genParserPhylogenyNode
+  leaf <- choice [try genParserPhylogenyFullNode, try genParserPhylogenyIdNode, try genParserPhylogenyDistanceNode]
   char '('
   optional (char '\n')
   subtree <- try genParserNewickTree
-  --char ')'
+  char ')'
   optional (char ',')
   optional (char '\n')
-  return $ Node (Just leaf1) subtree
+  return $ Node leaf subtree
 
 --Tree Leaf [x,..]
-genParserNewickSubTreeRight :: GenParser Char st (Tree (Maybe PhylogenyNode))
+genParserNewickSubTreeRight :: GenParser Char st (Tree PhylogenyNode)
 genParserNewickSubTreeRight = do
   char '('
   optional (char '\n')
   subtree <- try genParserNewickTree
-  --char ')'
+  char ')'
   optional (char '\n')
-  leaf1 <- try genParserPhylogenyNode
+  leaf <- try genParserNewickNode
   optional (char ',')
   optional (char '\n')
-  return $ Node (Just leaf1) subtree
+  return $ Node leaf subtree
 
 --Tree Nothing [x,..]
-genParserNewickBranch :: GenParser Char st (Tree (Maybe PhylogenyNode))
+genParserNewickBranch :: GenParser Char st (Tree PhylogenyNode)
 genParserNewickBranch = do
   char '('
   optional (char '\n')
   subtree <- try genParserNewickTree
-  --char ')'
+  char ')'
   optional (char '\n')
   optional (char ',')
   optional (char '\n')
-  return $ Node Nothing subtree
+  return $ Node (PhylogenyNode Nothing Nothing) subtree
 
 --Tree Leaf []
-genParserNewickLeaf :: GenParser Char st (Tree (Maybe PhylogenyNode))
+genParserNewickLeaf :: GenParser Char st (Tree PhylogenyNode)
 genParserNewickLeaf = do
-  leaf1 <- try genParserPhylogenyNode
-  choice [try (char ','), try (char ')'), try (char '('), try (lookAhead (char ';'))]
-  optional (char '\n')
-  return $ Node (Just leaf1) []
+  node <- try genParserNewickNode
+  return $ Node node [] 
 
---Phylogeny Node
-genParserPhylogenyNode:: GenParser Char st PhylogenyNode
-genParserPhylogenyNode = do
-  nodeId <- optionMaybe (try (many (choice [alphaNum,(oneOf "./|_-")])))
-  (char ':')
-  nodeDistance <- optionMaybe (many (choice [digit, char '.']))
+-- Node
+genParserNewickNode :: GenParser Char st PhylogenyNode
+genParserNewickNode = do
+  leaf1 <- choice [try genParserPhylogenyFullNode, try genParserPhylogenyDistanceNode, try genParserPhylogenyIdNode]
+  optional (char ',')
+  --choice [try (char ','), try (char ')'), try (char ';')]
+  optional (char '\n')
+  return leaf1
+
+--Phylogeny Id Node
+genParserPhylogenyIdNode:: GenParser Char st PhylogenyNode
+genParserPhylogenyIdNode = do
+  nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
-  return $ PhylogenyNode nodeId (liftM readDouble nodeDistance)
+  return $ PhylogenyNode (Just nodeId) Nothing
+
+--Phylogeny Distance Node
+genParserPhylogenyDistanceNode:: GenParser Char st PhylogenyNode
+genParserPhylogenyDistanceNode = do
+  (char ':')
+  nodeDistance <- many1 (choice [try digit, try (char '.')])
+  choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
+  return $ PhylogenyNode Nothing (Just (readDouble nodeDistance))
+
+--Phylogeny Full Node
+genParserPhylogenyFullNode:: GenParser Char st PhylogenyNode
+genParserPhylogenyFullNode = do
+  nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
+  (char ':')
+  nodeDistance <- many1 (choice [try digit, try (char '.')])
+  choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
+  return $ PhylogenyNode (Just nodeId) (Just (readDouble nodeDistance))
 
 ---------------------------
 --Auxiliary functions:
