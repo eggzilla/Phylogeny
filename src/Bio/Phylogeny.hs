@@ -26,20 +26,20 @@ parseNewick input = parse genParserNewickFormat "parseNewickFormat" input
 -- | Parse  from input filePath                        
 readNewick filePath = parseFromFile genParserNewickFormat filePath
 
---genParserNewickFormat :: GenParser Char st Tree PhylogenyNode
+genParserNewickFormat :: GenParser Char st [Tree (Maybe PhylogenyNode)]
 genParserNewickFormat = do
   tree <- genParserNewickTree 
   char ';'
   optional eof
   return tree
 
---genParserNewickTree :: GenParser Char st Tree PhylogenyNode
+genParserNewickTree :: GenParser Char st [Tree (Maybe PhylogenyNode)]
 genParserNewickTree = do
   subtrees <- many (choice [(try genParserNewickSubTreeLeft), (try genParserNewickSubTreeRight), (try genParserNewickLeaf), (try genParserNewickBranch)])
   return subtrees
 
 --Tree Leaf [x,..]
---genParserNewickSubTreeLeft :: GenParser Char st Tree PhylogenyNode []
+genParserNewickSubTreeLeft :: GenParser Char st (Tree (Maybe PhylogenyNode))
 genParserNewickSubTreeLeft = do 
   leaf1 <- try genParserPhylogenyNode
   char '('
@@ -51,7 +51,7 @@ genParserNewickSubTreeLeft = do
   return $ Node (Just leaf1) subtree
 
 --Tree Leaf [x,..]
---genParserNewickSubTreeRight :: GenParser Char st Tree PhylogenyNode []
+genParserNewickSubTreeRight :: GenParser Char st (Tree (Maybe PhylogenyNode))
 genParserNewickSubTreeRight = do
   char '('
   optional (char '\n')
@@ -63,6 +63,8 @@ genParserNewickSubTreeRight = do
   optional (char '\n')
   return $ Node (Just leaf1) subtree
 
+--Tree Nothing [x,..]
+genParserNewickBranch :: GenParser Char st (Tree (Maybe PhylogenyNode))
 genParserNewickBranch = do
   char '('
   optional (char '\n')
@@ -74,15 +76,15 @@ genParserNewickBranch = do
   return $ Node Nothing subtree
 
 --Tree Leaf []
---genParserNewickLeaf :: GenParser Char st Tree PhylogenyNode []
+genParserNewickLeaf :: GenParser Char st (Tree (Maybe PhylogenyNode))
 genParserNewickLeaf = do
   leaf1 <- try genParserPhylogenyNode
   optional (char ',')
   optional (char '\n')
   return $ Node (Just leaf1) []
 
---Tree Leaf []
---genParserPhylogenyNode:: GenParser Char st PhylogenyNode
+--Phylogeny Node
+genParserPhylogenyNode:: GenParser Char st PhylogenyNode
 genParserPhylogenyNode = do
   nodeId <- optionMaybe (try (many (choice [alphaNum,(oneOf "./|_-")])))
   (char ':')
