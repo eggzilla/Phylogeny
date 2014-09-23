@@ -19,4 +19,7 @@ main = do
   args <- getArgs
   let input_file = (head args)
   phylogeny <- readNewick input_file
+  let treedrawing = drawPylogeneticTree (fromRight phylogeny)
+  putStr treedrawing
+  putStrLn "-----"
   print phylogeny
