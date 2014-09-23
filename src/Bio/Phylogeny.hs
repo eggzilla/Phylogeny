@@ -5,6 +5,7 @@ module Bio.Phylogeny (
                        module Bio.PhylogenyData,
                        parseNewick,
                        readNewick,
+                       drawPylogeneticTree
                       ) where
 import Prelude 
 import System.IO 
@@ -15,6 +16,7 @@ import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language (emptyDef)    
 import Control.Monad
 import Data.Tree
+--import qualified Data.Tree.Zipper as TZ
 import Data.List
 import Data.Either
 import qualified Data.Either.Unwrap as E
@@ -27,6 +29,24 @@ parseNewick input = parse genParserNewickFormat "parseNewickFormat" input
 -- | Parse  from input filePath                        
 readNewick filePath = parseFromFile genParserNewickFormat filePath
 
+--draw Tree
+drawPylogeneticTree :: [Tree PhylogenyNode] -> String
+drawPylogeneticTree inputTree = output
+ where stringTree = map showPhylogenyNode inputTree
+       output = drawForest stringTree
+
+showPhylogenyNode :: Tree PhylogenyNode -> Tree String
+showPhylogenyNode (Node node children) = Node ((phyloIdfromMaybe (phylogenyId node)) ++ " " ++ (phyloDistancefromMaybe (distance node))) (map showPhylogenyNode children)
+
+phyloIdfromMaybe :: Maybe String -> String
+phyloIdfromMaybe id = fromMaybe "NA" id
+
+phyloDistancefromMaybe :: Maybe Double -> String
+phyloDistancefromMaybe distance 
+  | isJust distance = show (fromJust distance)
+  | otherwise = "noDist"
+
+-- parse Tree
 genParserNewickFormat :: GenParser Char st [Tree PhylogenyNode]
 genParserNewickFormat = do
   tree <- genParserNewickTree 
