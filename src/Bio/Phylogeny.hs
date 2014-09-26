@@ -18,6 +18,7 @@ import Control.Monad
 import Data.Tree
 import Data.List
 import Data.Either
+import Data.Tuple
 import Data.Graph.Inductive
 import qualified Data.Either.Unwrap as E
 
@@ -62,20 +63,8 @@ genParserNewickFormat = do
 
 genParserNewickTree :: GenParser Char st [Tree PhylogenyNode]
 genParserNewickTree = do
-  subtrees <- many (choice [(try genParserNewickLeaf),(try genParserNewickSubTreeRight), (try genParserNewickSubTreeLeft), (try genParserNewickBranch)])
+  subtrees <- many (choice [(try genParserNewickLeaf),(try genParserNewickSubTreeRight), (try genParserNewickBranch)])
   return subtrees
-
---Tree Leaf [x,..]
-genParserNewickSubTreeLeft :: GenParser Char st (Tree PhylogenyNode)
-genParserNewickSubTreeLeft = do 
-  leaf <- choice [try genParserPhylogenyFullNode, try genParserPhylogenyIdNode, try genParserPhylogenyDistanceNode]
-  char '('
-  optional (char '\n')
-  subtree <- try genParserNewickTree
-  char ')'
-  optional (char ',')
-  optional (char '\n')
-  return $ Node leaf subtree
 
 --Tree Leaf [x,..]
 genParserNewickSubTreeRight :: GenParser Char st (Tree PhylogenyNode)
@@ -150,7 +139,6 @@ genParserGraphNewickFormat = do
   let nodes = [(1,'a'),(2,'b')]
   let edges = [(1,2,1)]
   return $ mkGraph nodes edges
-
 
 ---------------------------
 --Auxiliary functions:
