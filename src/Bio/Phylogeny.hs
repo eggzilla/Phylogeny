@@ -16,9 +16,9 @@ import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language (emptyDef)    
 import Control.Monad
 import Data.Tree
---import qualified Data.Tree.Zipper as TZ
 import Data.List
 import Data.Either
+import Data.Graph.Inductive
 import qualified Data.Either.Unwrap as E
 
 --------------------------------------------------------
@@ -28,6 +28,12 @@ parseNewick input = parse genParserNewickFormat "parseNewickFormat" input
 
 -- | Parse  from input filePath                        
 readNewick filePath = parseFromFile genParserNewickFormat filePath
+
+-- | Parse newick tree format from input string
+parseGraphNewick input = parse genParserGraphNewickFormat "parseNewickFormat" input
+
+-- | Parse  from input filePath                        
+readGraphNewickGraph filePath = parseFromFile genParserGraphNewickFormat filePath
 
 --draw Tree
 drawPylogeneticTree :: [Tree PhylogenyNode] -> String
@@ -134,6 +140,17 @@ genParserPhylogenyFullNode = do
   nodeDistance <- many1 (choice [try digit, try (char '.')])
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   return $ PhylogenyNode (Just nodeId) (Just (readDouble nodeDistance))
+
+--Graph
+genParserGraphNewickFormat :: GenParser Char st (Gr Char Int)
+genParserGraphNewickFormat = do
+  --edgesandNodes  <- choice [parseNode,parseInternal]
+  char ';'
+  optional eof
+  let nodes = [(1,'a'),(2,'b')]
+  let edges = [(1,2,1)]
+  return $ mkGraph nodes edges
+
 
 ---------------------------
 --Auxiliary functions:
