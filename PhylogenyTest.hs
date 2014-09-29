@@ -20,8 +20,9 @@ import Data.Graph.Inductive
 main = do
   args <- getArgs
   let input_file = (head args)
-  phylogeny <- readNewick input_file
-  let treedrawing = drawPylogeneticTree (fromRight phylogeny)
-  putStr treedrawing
+  phylogenyRaw <- readFile input_file
+  let phylogenyparsed = parseGraphNewick phylogenyRaw 
+  --let treedrawing = drawPylogeneticTree (fromRight phylogeny)
+  --putStr treedrawing
   putStrLn "-----"
-  print phylogeny
+  print (fromRight phylogenyparsed)
