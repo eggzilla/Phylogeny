@@ -1,14 +1,12 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 -- | Parse and process phylogeny data
 
-module Bio.Phylogeny (                      
+module Bio.PhylogenyParser (                      
                        module Bio.PhylogenyData,
                        parseNewick,
                        readNewick,
                        parseGraphNewick,
-                       readGraphNewick,
-                       drawPylogeneticTree,
-                       drawPhylogeneticGraph
+                       readGraphNewick
                       ) where
 import Prelude 
 import System.IO 
@@ -43,30 +41,6 @@ readGraphNewick filePath = do
   phylogenyRaw <- readFile filePath
   let phylogenyParsed = parseGraphNewick phylogenyRaw
   return phylogenyParsed
-
---draw Tree
-drawPylogeneticTree :: [Tree PhylogenyNode] -> String
-drawPylogeneticTree inputTree = output
- where stringTree = map showPhylogenyNode inputTree
-       output = drawForest stringTree
-
-showPhylogenyNode :: Tree PhylogenyNode -> Tree String
-showPhylogenyNode (Node node children) = Node ((phyloIdfromMaybe (phylogenyId node)) ++ " " ++ (phyloDistancefromMaybe (distance node))) (map showPhylogenyNode children)
-
-phyloIdfromMaybe :: Maybe String -> String
-phyloIdfromMaybe id = fromMaybe "NA" id
-
-phyloDistancefromMaybe :: Maybe Double -> String
-phyloDistancefromMaybe distance 
-  | isJust distance = show (fromJust distance)
-  | otherwise = "noDist"
-
---draw Graph
-drawPhylogeneticGraph :: (Gr String Double) -> [String]
-drawPhylogeneticGraph inputGraph = do
-  let dotFormat = GV.graphToDot GV.nonClusteredParams inputGraph
-  let text = GVP.renderDot $ GVP.toDot dotFormat
-  return (TL.unpack text)
 
 -- parse Tree
 genParserNewickFormat :: GenParser Char st [Tree PhylogenyNode]
