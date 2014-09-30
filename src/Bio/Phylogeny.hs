@@ -153,13 +153,13 @@ genParserGraphNewickFormat = do
   setState (currentIndex + 1)
   children <- many1 (choice [try (genParserGraphNode currentIndex), try (genParserGraphInternal currentIndex), try (genParserGraphLeaf currentIndex)])
   char ')'
-  --nodeId <- (try (many1 alphaNum))
+  maybeNodeId <- optionMaybe (try (many1 alphaNum))
+  let nodeId = fromMaybe "internal" maybeNodeId
   char ';'
   optional eof
-  --let currentNode = (currentIndex,nodeId)
+  let currentNode = (currentIndex,nodeId)
   let (otherNodes,otherEdges) =  unzip children
-  --let nodes = currentNode:(concat otherNodes)
-  let nodes = (concat otherNodes)
+  let nodes = currentNode:(concat otherNodes)
   let edges = (concat otherEdges)
   return $ (mkGraph nodes edges)
 
