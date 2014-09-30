@@ -7,7 +7,8 @@ module Bio.Phylogeny (
                        readNewick,
                        parseGraphNewick,
                        readGraphNewick,
-                       drawPylogeneticTree
+                       drawPylogeneticTree,
+                       drawPhylogeneticGraph
                       ) where
 import Prelude 
 import System.IO 
@@ -21,9 +22,11 @@ import Data.Tree
 import Data.List
 import Data.Either
 import Data.Tuple
+import qualified Data.Text.Lazy as TL
 import Data.Graph.Inductive
 import qualified Data.Either.Unwrap as E
-
+import qualified Data.GraphViz as GV
+import qualified Data.GraphViz.Printing as GVP
 --------------------------------------------------------
 
 -- | Parse newick tree format from input string
@@ -57,6 +60,13 @@ phyloDistancefromMaybe :: Maybe Double -> String
 phyloDistancefromMaybe distance 
   | isJust distance = show (fromJust distance)
   | otherwise = "noDist"
+
+--draw Graph
+drawPhylogeneticGraph :: (Gr String Double) -> [String]
+drawPhylogeneticGraph inputGraph = do
+  let dotFormat = GV.graphToDot GV.nonClusteredParams inputGraph
+  let text = GVP.renderDot $ GVP.toDot dotFormat
+  return (TL.unpack text)
 
 -- parse Tree
 genParserNewickFormat :: GenParser Char st [Tree PhylogenyNode]
