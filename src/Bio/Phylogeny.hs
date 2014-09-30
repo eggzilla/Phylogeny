@@ -6,6 +6,7 @@ module Bio.Phylogeny (
                        parseNewick,
                        readNewick,
                        parseGraphNewick,
+                       readGraphNewick,
                        drawPylogeneticTree
                       ) where
 import Prelude 
@@ -34,8 +35,11 @@ readNewick filePath = parseFromFile genParserNewickFormat filePath
 -- | Parse newick tree format from input string
 parseGraphNewick input = runParser genParserGraphNewickFormat 1 "parseGraphNewick:" input
 
--- | Parse  from input filePath                        
---readGraphNewickGraph filePath = parseFromFile genParserGraphNewickFormat filePath
+-- | Parse from input filePath                        
+readGraphNewick filePath = do
+  phylogenyRaw <- readFile filePath
+  let phylogenyParsed = parseGraphNewick phylogenyRaw
+  return phylogenyParsed
 
 --draw Tree
 drawPylogeneticTree :: [Tree PhylogenyNode] -> String
@@ -157,7 +161,7 @@ genParserGraphNode parentNodeIndex = do
   setState (currentIndex + 1)
   children <- many1 (choice [try (genParserGraphLeaf currentIndex), try (genParserGraphInternal currentIndex),try (genParserGraphNode currentIndex)])
   char ')'
-  nodeId <- (try (many1 digit))
+  nodeId <- (try (many1 alphaNum))
   edgeDistance <- genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   let currentNode = (currentIndex,nodeId)
@@ -189,7 +193,7 @@ genParserGraphLeaf parentNodeIndex = do
   --try (char ',')
   --choice[(try (char ',')),(try (char ','))]
   optional (try (char ','))
-  nodeId <- (try (many1 digit))
+  nodeId <- (try (many1 alphaNum))
   edgeDistance <- try genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   --nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
