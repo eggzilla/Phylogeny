@@ -4,7 +4,9 @@
 module Bio.PhylogenyTools (                      
                        module Bio.PhylogenyData,
                        drawPylogeneticTree,
-                       drawPhylogeneticGraph
+                       drawPhylogeneticGraph,
+                       pathLengths,
+                       averagePathLength
                       ) where
 import Prelude 
 import System.IO 
@@ -48,3 +50,14 @@ drawPhylogeneticGraph inputGraph = do
   let dotFormat = GV.graphToDot GV.nonClusteredParams inputGraph
   let text = GVP.renderDot $ GVP.toDot dotFormat
   TL.unpack text
+
+--Paths
+pathLengths inputGraph = pathLengths
+  where labelPairs = map toPair (sequence [(nodes inputGraph),(nodes inputGraph)])
+        nonselfPairs = filter (\pair -> (fst pair) /= (snd pair)) labelPairs 
+        pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) nonselfPairs
+
+averagePathLength pathLengths =  (sum pathLengths) / fromIntegral (length (pathLengths))
+  
+--auxiliary functions
+toPair [a,b] = (a,b)
