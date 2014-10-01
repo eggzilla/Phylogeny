@@ -3,8 +3,6 @@
 
 module Bio.PhylogenyParser (                      
                        module Bio.PhylogenyData,
-                       parseNewick,
-                       readNewick,
                        parseGraphNewick,
                        readGraphNewick
                       ) where
@@ -28,12 +26,6 @@ import qualified Data.GraphViz.Printing as GVP
 --------------------------------------------------------
 
 -- | Parse newick tree format from input string
-parseNewick input = parse genParserNewickFormat "parseNewickFormat" input
-
--- | Parse  from input filePath                        
-readNewick filePath = parseFromFile genParserNewickFormat filePath
-
--- | Parse newick tree format from input string
 parseGraphNewick input = runParser genParserGraphNewickFormat 1 "parseGraphNewick:" input
 
 -- | Parse from input filePath                        
@@ -41,83 +33,6 @@ readGraphNewick filePath = do
   phylogenyRaw <- readFile filePath
   let phylogenyParsed = parseGraphNewick (filter (\char -> char /= '\n') phylogenyRaw)
   return phylogenyParsed
-
--- parse Tree
-genParserNewickFormat :: GenParser Char st [Tree PhylogenyNode]
-genParserNewickFormat = do
-  tree <- genParserNewickTree 
-  char ';'
-  optional eof
-  return tree
-
-genParserNewickTree :: GenParser Char st [Tree PhylogenyNode]
-genParserNewickTree = do
-  subtrees <- many (choice [(try genParserNewickLeaf),(try genParserNewickSubTreeRight), (try genParserNewickBranch)])
-  return subtrees
-
---Tree Leaf [x,..]
-genParserNewickSubTreeRight :: GenParser Char st (Tree PhylogenyNode)
-genParserNewickSubTreeRight = do
-  char '('
-  optional (char '\n')
-  subtree <- try genParserNewickTree
-  char ')'
-  optional (char '\n')
-  leaf <- try genParserNewickNode
-  optional (char ',')
-  optional (char '\n')
-  return $ Node leaf subtree
-
---Tree Nothing [x,..]
-genParserNewickBranch :: GenParser Char st (Tree PhylogenyNode)
-genParserNewickBranch = do
-  char '('
-  optional (char '\n')
-  subtree <- try genParserNewickTree
-  char ')'
-  optional (char '\n')
-  optional (char ',')
-  optional (char '\n')
-  return $ Node (PhylogenyNode Nothing Nothing) subtree
-
---Tree Leaf []
-genParserNewickLeaf :: GenParser Char st (Tree PhylogenyNode)
-genParserNewickLeaf = do
-  node <- try genParserNewickNode
-  return $ Node node [] 
-
--- Node
-genParserNewickNode :: GenParser Char st PhylogenyNode
-genParserNewickNode = do
-  leaf1 <- choice [try genParserPhylogenyFullNode, try genParserPhylogenyDistanceNode, try genParserPhylogenyIdNode]
-  optional (char ',')
-  --choice [try (char ','), try (char ')'), try (char ';')]
-  optional (char '\n')
-  return leaf1
-
---Phylogeny Id Node
-genParserPhylogenyIdNode:: GenParser Char st PhylogenyNode
-genParserPhylogenyIdNode = do
-  nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
-  choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
-  return $ PhylogenyNode (Just nodeId) Nothing
-
---Phylogeny Distance Node
-genParserPhylogenyDistanceNode:: GenParser Char st PhylogenyNode
-genParserPhylogenyDistanceNode = do
-  (char ':')
-  nodeDistance <- many1 (choice [try digit, try (char '.')])
-  choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
-  return $ PhylogenyNode Nothing (Just (readDouble nodeDistance))
-
---Phylogeny Full Node
-genParserPhylogenyFullNode:: GenParser Char st PhylogenyNode
-genParserPhylogenyFullNode = do
-  nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
-  (char ':')
-  nodeDistance <- many1 (choice [try digit, try (char '.')])
-  choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
-  return $ PhylogenyNode (Just nodeId) (Just (readDouble nodeDistance))
 
 --Graph representation
 genParserGraphNewickFormat :: GenParser Char Int (Gr String Double)

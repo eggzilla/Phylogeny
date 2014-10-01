@@ -3,7 +3,6 @@
 
 module Bio.PhylogenyTools (                      
                        module Bio.PhylogenyData,
-                       drawPylogeneticTree,
                        drawPhylogeneticGraph,
                        pathLengths,
                        pathLengthsIndexed                      
@@ -26,23 +25,6 @@ import qualified Data.Either.Unwrap as E
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Printing as GVP
 --------------------------------------------------------
-
---draw Tree
-drawPylogeneticTree :: [Tree PhylogenyNode] -> String
-drawPylogeneticTree inputTree = output
- where stringTree = map showPhylogenyNode inputTree
-       output = drawForest stringTree
-
-showPhylogenyNode :: Tree PhylogenyNode -> Tree String
-showPhylogenyNode (Node node children) = Node ((phyloIdfromMaybe (phylogenyId node)) ++ " " ++ (phyloDistancefromMaybe (distance node))) (map showPhylogenyNode children)
-
-phyloIdfromMaybe :: Maybe String -> String
-phyloIdfromMaybe id = fromMaybe "NA" id
-
-phyloDistancefromMaybe :: Maybe Double -> String
-phyloDistancefromMaybe distance 
-  | isJust distance = show (fromJust distance)
-  | otherwise = "noDist"
 
 --draw Graph
 drawPhylogeneticGraph :: (Gr String Double) -> String
