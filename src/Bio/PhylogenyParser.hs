@@ -149,10 +149,10 @@ genParserGraphNode parentNodeIndex = do
   edgeDistance <- genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   let currentNode = (currentIndex,nodeId)
-  let currentEdge = (parentNodeIndex,currentIndex,edgeDistance)
+  let currentEdges = [(parentNodeIndex,currentIndex,edgeDistance),(currentIndex,parentNodeIndex,edgeDistance)]
   let (otherNodes,otherEdges) =  unzip children
   let nodes = currentNode:(concat otherNodes)
-  let edges = currentEdge:(concat otherEdges)
+  let edges = currentEdges ++ (concat otherEdges)
   return (nodes,edges)
 
 genParserGraphInternal :: Int -> GenParser Char Int ([(Int, String)],[(Int,Int,Double)])
@@ -166,10 +166,10 @@ genParserGraphInternal parentNodeIndex = do
   edgeDistance <- genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   let currentNode = (currentIndex, "internal")
-  let currentEdge = (parentNodeIndex,currentIndex,edgeDistance)
+  let currentEdges = [(parentNodeIndex,currentIndex,edgeDistance),(currentIndex,parentNodeIndex,edgeDistance)]
   let (otherNodes,otherEdges) =  unzip children
   let nodes = currentNode:(concat otherNodes)
-  let edges = currentEdge:(concat otherEdges)
+  let edges = currentEdges ++ (concat otherEdges)
   return (nodes,edges)
 
 genParserGraphLeaf :: Int -> GenParser Char Int ([(Int, String)],[(Int,Int,Double)])
@@ -184,7 +184,7 @@ genParserGraphLeaf parentNodeIndex = do
   currentIndex <- getState
   setState (currentIndex + 1)
   let currentNode = [(currentIndex,nodeId)]
-  let currentEdge = [(parentNodeIndex,currentIndex,edgeDistance)]
+  let currentEdge = [(parentNodeIndex,currentIndex,edgeDistance),(currentIndex,parentNodeIndex,edgeDistance)]
   return $ (currentNode,currentEdge)
 
 genParserEdgeDistance :: GenParser Char st Double
