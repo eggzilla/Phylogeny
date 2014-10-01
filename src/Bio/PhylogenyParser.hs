@@ -39,7 +39,7 @@ parseGraphNewick input = runParser genParserGraphNewickFormat 1 "parseGraphNewic
 -- | Parse from input filePath                        
 readGraphNewick filePath = do
   phylogenyRaw <- readFile filePath
-  let phylogenyParsed = parseGraphNewick phylogenyRaw
+  let phylogenyParsed = parseGraphNewick (filter (\char -> char /= '\n') phylogenyRaw)
   return phylogenyParsed
 
 -- parse Tree
@@ -127,7 +127,7 @@ genParserGraphNewickFormat = do
   setState (currentIndex + 1)
   children <- many1 (choice [try (genParserGraphNode currentIndex), try (genParserGraphInternal currentIndex), try (genParserGraphLeaf currentIndex)])
   char ')'
-  maybeNodeId <- optionMaybe (try (many1 alphaNum))
+  maybeNodeId <- optionMaybe (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
   let nodeId = fromMaybe "internal" maybeNodeId
   char ';'
   optional eof
@@ -145,7 +145,7 @@ genParserGraphNode parentNodeIndex = do
   setState (currentIndex + 1)
   children <- many1 (choice [try (genParserGraphLeaf currentIndex), try (genParserGraphInternal currentIndex),try (genParserGraphNode currentIndex)])
   char ')'
-  nodeId <- (try (many1 alphaNum))
+  nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/|_-")])))
   edgeDistance <- genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   let currentNode = (currentIndex,nodeId)
@@ -177,10 +177,9 @@ genParserGraphLeaf parentNodeIndex = do
   --try (char ',')
   --choice[(try (char ',')),(try (char ','))]
   optional (try (char ','))
-  nodeId <- (try (many1 alphaNum))
+  nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/|_-")])))
   edgeDistance <- try genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
-  --nodeId <- (try (many1 (choice [alphaNum,(oneOf ".\\/:|_-")])))
   currentIndex <- getState
   setState (currentIndex + 1)
   let currentNode = [(currentIndex,nodeId)]
@@ -190,7 +189,7 @@ genParserGraphLeaf parentNodeIndex = do
 genParserEdgeDistance :: GenParser Char st Double
 genParserEdgeDistance = do
   try (char ':')
-  nodeDistance <- many1 (choice [try digit, try (char '.')])
+  nodeDistance <- many1 (choice [try digit, try (char '.'), try (char '-')])
   return (readDouble nodeDistance)
 
 ---------------------------
