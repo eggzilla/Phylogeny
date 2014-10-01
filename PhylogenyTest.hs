@@ -26,5 +26,9 @@ main = do
   -- cat test.dot | dot -Tsvg > phylo.svg
   putStrLn "-----"
   print (fromRight parsedPhylogeny)
+  putStrLn "-----"
+  let (currentPathLengths,pairs)= unzip (pathLengthsIndexed (fromRight parsedPhylogeny))
+  print currentPathLengths
+  print pairs
   let treedrawing = drawPhylogeneticGraph (fromRight parsedPhylogeny)
   writeFile "test.dot" treedrawing

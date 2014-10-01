@@ -6,7 +6,7 @@ module Bio.PhylogenyTools (
                        drawPylogeneticTree,
                        drawPhylogeneticGraph,
                        pathLengths,
-                       averagePathLength
+                       pathLengthsIndexed                      
                       ) where
 import Prelude 
 import System.IO 
@@ -52,12 +52,28 @@ drawPhylogeneticGraph inputGraph = do
   TL.unpack text
 
 --Paths
+-- | Computes distance between all nodes in the graph
+pathLengths :: (Gr String Double) -> [Double]
 pathLengths inputGraph = pathLengths
-  where labelPairs = map toPair (sequence [(nodes inputGraph),(nodes inputGraph)])
-        nonselfPairs = filter (\pair -> (fst pair) /= (snd pair)) labelPairs 
-        pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) nonselfPairs
+  where nonInternalLabeledNodes = filter (\(_,label) -> label /= "internal") (labNodes inputGraph)
+        nonInternalNodes = map (\(node,_) -> node) nonInternalLabeledNodes
+        pairs = map toPair (sequence [(nonInternalNodes),(nonInternalNodes)])
+        --we are not considering distance to self and the upper triangular part of the distance matrix
+        nonselfPairs = filter (\pair -> (fst pair) /= (snd pair)) pairs 
+        upperTriangularNonselfPairs = take ((length nonselfPairs) `div` 2) nonselfPairs
+        pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) upperTriangularNonselfPairs
 
-averagePathLength pathLengths =  (sum pathLengths) / fromIntegral (length (pathLengths))
+-- | Computes distance between all nodes in the graph including the corresponding node indices
+pathLengthsIndexed :: (Gr String Double) -> [(Double,(Node,Node))]
+pathLengthsIndexed inputGraph = pathLengthsIndexed
+  where nonInternalLabeledNodes = filter (\(_,label) -> label /= "internal") (labNodes inputGraph)
+        nonInternalNodes = map (\(node,_) -> node) nonInternalLabeledNodes
+        pairs = map toPair (sequence [(nonInternalNodes),(nonInternalNodes)])
+        --we are not considering distance to self and the upper triangular part of the distance matrix
+        nonselfPairs = filter (\pair -> (fst pair) /= (snd pair)) pairs 
+        upperTriangularNonselfPairs = take ((length nonselfPairs) `div` 2) nonselfPairs
+        pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) upperTriangularNonselfPairs
+        pathLengthsIndexed = zip pathLengths upperTriangularNonselfPairs
   
 --auxiliary functions
 toPair [a,b] = (a,b)
