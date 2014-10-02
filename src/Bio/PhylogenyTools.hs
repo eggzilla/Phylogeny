@@ -5,7 +5,8 @@ module Bio.PhylogenyTools (
                        module Bio.PhylogenyData,
                        drawPhylogeneticGraph,
                        pathLengths,
-                       pathLengthsIndexed                      
+                       pathLengthsIndexed,
+                       averagePathLengthperNodes                      
                       ) where
 import Prelude 
 import System.IO 
@@ -56,6 +57,19 @@ pathLengthsIndexed inputGraph = pathLengthsIndexed
         upperTriangularNonselfPairs = take ((length nonselfPairs) `div` 2) nonselfPairs
         pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) upperTriangularNonselfPairs
         pathLengthsIndexed = zip pathLengths upperTriangularNonselfPairs
-  
+
+averagePathLengthperNodes :: [(Double,(Node,Node))] -> [(Node,Double)]
+averagePathLengthperNodes indexedPathLengths = averagePathLengthperNodes
+  where nodeIndices = nub (concatMap (\(_,(nodeIndex,nodeIndex2)) -> [nodeIndex,nodeIndex2]) indexedPathLengths)
+        averagePathLengthperNodes = map (averagePathLengthperNode indexedPathLengths) nodeIndices
+        
+                     
+averagePathLengthperNode :: [(Double,(Node,Node))] -> Node -> (Node,Double)
+averagePathLengthperNode indexedPathLengths nodeIndex = (nodeIndex,averagePathLength)
+  where pathLengthsperNode = filter (\(_,(a,b)) -> a == nodeIndex || b == nodeIndex) indexedPathLengths
+        sumPathLengths = sum (map (\(pathLength,(_,_)) -> pathLength) pathLengthsperNode)
+        averagePathLength = sumPathLengths / fromIntegral (length pathLengthsperNode)
+
 --auxiliary functions
 toPair [a,b] = (a,b)
+

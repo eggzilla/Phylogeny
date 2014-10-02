@@ -27,8 +27,12 @@ main = do
   putStrLn "-----"
   print (fromRight parsedPhylogeny)
   putStrLn "-----"
-  let (currentPathLengths,pairs)= unzip (pathLengthsIndexed (fromRight parsedPhylogeny))
+  let indexedPathLengths = pathLengthsIndexed (fromRight parsedPhylogeny)
+  let (currentPathLengths,pairs)= unzip indexedPathLengths
   print currentPathLengths
   print pairs
+  let averagePathLengths = averagePathLengthperNodes indexedPathLengths
+  putStrLn "Average path lengths per node:"
+  print averagePathLengths
   let treedrawing = drawPhylogeneticGraph (fromRight parsedPhylogeny)
   writeFile "test.dot" treedrawing
