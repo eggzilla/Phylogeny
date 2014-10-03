@@ -6,7 +6,11 @@ module Bio.PhylogenyTools (
                        drawPhylogeneticGraph,
                        pathLengths,
                        pathLengthsIndexed,
-                       averagePathLengthperNodes                      
+                       averagePathLengthperNodes,
+                       compareAveragePathLengths,
+                       minimumAveragePathLength,
+                       maximumAveragePathLength,
+                       getLabel
                       ) where
 import Prelude 
 import System.IO 
@@ -70,6 +74,25 @@ averagePathLengthperNode indexedPathLengths nodeIndex = (nodeIndex,averagePathLe
         sumPathLengths = sum (map (\(pathLength,(_,_)) -> pathLength) pathLengthsperNode)
         averagePathLength = sumPathLengths / fromIntegral (length pathLengthsperNode)
 
+minimumAveragePathLength :: [(Node,Double)] -> (Node,Double)
+minimumAveragePathLength averagePathLengthperNode = minimumBy compareAveragePathLengths averagePathLengthperNode
+
+maximumAveragePathLength :: [(Node,Double)] -> (Node,Double)
+maximumAveragePathLength averagePathLengthperNode = maximumBy compareAveragePathLengths averagePathLengthperNode
+
+getLabel :: (Gr String Double) -> Node -> String
+getLabel parsedNewick inputNode = nodeLabel
+  where nodeLabels = labNodes parsedNewick
+        labeledNode = fromJust (find (\(index,label) -> index == inputNode) nodeLabels)
+        nodeLabel = snd labeledNode
+
 --auxiliary functions
 toPair [a,b] = (a,b)
+
+compareAveragePathLengths :: (Node,Double) -> (Node,Double) -> Ordering
+compareAveragePathLengths (_,length1) (_,length2)
+  | length1 > length2 = LT
+  | length1 < length2 = GT
+  -- in case of equal evalues the first hit is selected
+  | length1 == length2 = EQ
 
