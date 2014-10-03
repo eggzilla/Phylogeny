@@ -80,10 +80,10 @@ minimumAveragePathLength averagePathLengthperNode = minimumBy compareAveragePath
 maximumAveragePathLength :: [(Node,Double)] -> (Node,Double)
 maximumAveragePathLength averagePathLengthperNode = maximumBy compareAveragePathLengths averagePathLengthperNode
 
-getLabel :: (Gr String Double) -> Node -> String
+getLabel :: (Gr String Double) -> (Node,a) -> String
 getLabel parsedNewick inputNode = nodeLabel
   where nodeLabels = labNodes parsedNewick
-        labeledNode = fromJust (find (\(index,label) -> index == inputNode) nodeLabels)
+        labeledNode = fromJust (find (\(index,label) -> index == (fst inputNode)) nodeLabels)
         nodeLabel = snd labeledNode
 
 --auxiliary functions
