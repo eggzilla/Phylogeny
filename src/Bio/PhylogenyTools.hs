@@ -32,7 +32,7 @@ import qualified Data.GraphViz.Printing as GVP
 --------------------------------------------------------
 
 --draw Graph
-drawPhylogeneticGraph :: (Gr String Double) -> String
+drawPhylogeneticGraph :: Gr String Double -> String
 drawPhylogeneticGraph inputGraph = do
   let dotFormat = GV.graphToDot GV.nonClusteredParams inputGraph
   let text = GVP.renderDot $ GVP.toDot dotFormat
@@ -40,26 +40,26 @@ drawPhylogeneticGraph inputGraph = do
 
 --Paths
 -- | Computes distance between all nodes in the graph
-pathLengths :: (Gr String Double) -> [Double]
+pathLengths :: Gr String Double -> [Double]
 pathLengths inputGraph = pathLengths
   where nonInternalLabeledNodes = filter (\(_,label) -> label /= "internal") (labNodes inputGraph)
-        nonInternalNodes = map (\(node,_) -> node) nonInternalLabeledNodes
-        pairs = map toPair (sequence [(nonInternalNodes),(nonInternalNodes)])
+        nonInternalNodes = map fst nonInternalLabeledNodes
+        pairs = map toPair (sequence [nonInternalNodes,nonInternalNodes])
         --we are not considering distance to self and the upper triangular part of the distance matrix
-        nonselfPairs = filter (\pair -> (fst pair) /= (snd pair)) pairs 
-        upperTriangularNonselfPairs = take ((length nonselfPairs) `div` 2) nonselfPairs
+        nonselfPairs = filter (\pair -> uncurry (/=) pair) pairs 
+        upperTriangularNonselfPairs = take (length nonselfPairs `div` 2) nonselfPairs
         pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) upperTriangularNonselfPairs
 
 -- | Computes distance between all nodes in the graph including the corresponding node indices
-pathLengthsIndexed :: (Gr String Double) -> [(Double,(Node,Node))]
+pathLengthsIndexed :: Gr String Double -> [(Double,(Node,Node))]
 pathLengthsIndexed inputGraph = pathLengthsIndexed
   where nonInternalLabeledNodes = filter (\(_,label) -> label /= "internal") (labNodes inputGraph)
-        nonInternalNodes = map (\(node,_) -> node) nonInternalLabeledNodes
-        pairs = map toPair (sequence [(nonInternalNodes),(nonInternalNodes)])
+        nonInternalNodes = map fst nonInternalLabeledNodes
+        pairs = map toPair (sequence [nonInternalNodes,nonInternalNodes])
         --we are not considering distance to self and the upper triangular part of the distance matrix
-        nonselfPairs = filter (\pair -> (fst pair) /= (snd pair)) pairs 
-        upperTriangularNonselfPairs = take ((length nonselfPairs) `div` 2) nonselfPairs
-        pathLengths = map (\pair -> spLength (fst pair) (snd pair) inputGraph) upperTriangularNonselfPairs
+        nonselfPairs = filter (\pair -> uncurry (/=) pair) pairs 
+        upperTriangularNonselfPairs = take (length nonselfPairs `div` 2) nonselfPairs
+        pathLengths = map (\pair -> uncurry spLength pair inputGraph) upperTriangularNonselfPairs
         pathLengthsIndexed = zip pathLengths upperTriangularNonselfPairs
 
 averagePathLengthperNodes :: [(Double,(Node,Node))] -> [(Node,Double)]
@@ -75,15 +75,15 @@ averagePathLengthperNode indexedPathLengths nodeIndex = (nodeIndex,averagePathLe
         averagePathLength = sumPathLengths / fromIntegral (length pathLengthsperNode)
 
 minimumAveragePathLength :: [(Node,Double)] -> (Node,Double)
-minimumAveragePathLength averagePathLengthperNode = minimumBy compareAveragePathLengths averagePathLengthperNode
+minimumAveragePathLength = minimumBy compareAveragePathLengths 
 
 maximumAveragePathLength :: [(Node,Double)] -> (Node,Double)
-maximumAveragePathLength averagePathLengthperNode = maximumBy compareAveragePathLengths averagePathLengthperNode
+maximumAveragePathLength = maximumBy compareAveragePathLengths
 
-getLabel :: (Gr String Double) -> (Node,a) -> String
+getLabel :: Gr String Double -> (Node,a) -> String
 getLabel parsedNewick inputNode = nodeLabel
   where nodeLabels = labNodes parsedNewick
-        labeledNode = fromJust (find (\(index,label) -> index == (fst inputNode)) nodeLabels)
+        labeledNode = fromJust (find (\(index,label) -> index == fst inputNode) nodeLabels)
         nodeLabel = snd labeledNode
 
 --auxiliary functions
