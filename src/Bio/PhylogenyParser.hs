@@ -26,7 +26,7 @@ import qualified Data.GraphViz.Printing as GVP
 --------------------------------------------------------
 
 -- | Parse newick tree format from input string
-parseGraphNewick input = runParser genParserGraphNewickFormat 1 "parseGraphNewick:" 
+parseGraphNewick = runParser genParserGraphNewickFormat 1 "parseGraphNewick:" 
 
 -- | Parse from input filePath                        
 readGraphNewick filePath = do
