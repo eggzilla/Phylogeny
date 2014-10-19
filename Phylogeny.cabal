@@ -30,7 +30,10 @@ source-repository this
 library
   -- Modules exported by the library.
   exposed-modules:   Bio.PhylogenyData, Bio.PhylogenyTools, Bio.PhylogenyParser
- 
+
+  --compiler-options:
+  ghc-options:         -Wall -O2
+
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.5 && <5, parsec, containers, either-unwrap, fgl, text, graphviz
 
