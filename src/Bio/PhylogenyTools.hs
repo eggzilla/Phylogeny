@@ -29,15 +29,32 @@ import Data.Graph.Inductive
 import qualified Data.Either.Unwrap as E
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Printing as GVP
+import qualified Data.GraphViz.Attributes.Colors as GVAC
+import qualified Data.GraphViz.Attributes.Complete as GVA
 --------------------------------------------------------
 
 --draw Graph
 drawPhylogeneticGraph :: Gr String Double -> String
 drawPhylogeneticGraph inputGraph = do
   let dotFormat = GV.graphToDot GV.nonClusteredParams inputGraph
-  let text = GVP.renderDot $ GVP.toDot dotFormat
-  TL.unpack text
+  let params = GV.nonClusteredParams {GV.isDirected = True
+                       , GV.globalAttributes = [GV.GraphAttrs [GVA.Size (GVA.GSize (20 :: Double) (Just (20 :: Double)) False)]]
+                       , GV.isDotCluster     = const True
+                       , GV.fmtNode = nodeFormat
+                       , GV.fmtEdge = edgeFormat
+                       }
+  let dotFormat = GV.graphToDot params inputGraph
+  let dottext = GVP.renderDot $ GVP.toDot dotFormat
+  TL.unpack dottext
 
+nodeFormat :: (t,String) -> [GVA.Attribute]
+nodeFormat (_,label)  
+  | label == "internal" =  [GV.shape GVA.PointShape] --[GV.textLabel (TL.pack "")]
+  | otherwise =  [GV.textLabel (TL.pack label)]
+
+edgeFormat :: (t,t, Double) -> [GVA.Attribute]
+edgeFormat (_,_,label) =  [GV.textLabel (TL.pack ("\"" ++ (show label) ++ "\""))]
+                 
 --Paths
 -- | Computes distance between all nodes in the graph
 pathLengths :: Gr String Double -> [Double]

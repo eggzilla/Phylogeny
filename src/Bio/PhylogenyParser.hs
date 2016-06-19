@@ -42,7 +42,7 @@ genParserGraphNewickFormat = do
   setState (currentIndex + 1)
   children <- many1 (choice [try (genParserGraphNode currentIndex), try (genParserGraphInternal currentIndex), try (genParserGraphLeaf currentIndex)])
   char ')'
-  maybeNodeId <- optionMaybe (try (many1 (choice [alphaNum, oneOf ".\\/:|_-"])))
+  maybeNodeId <- optionMaybe (try (many1 (choice [alphaNum, oneOf " .\\/:|_-"])))
   let nodeId = fromMaybe "internal" maybeNodeId
   char ';'
   optional eof
@@ -50,8 +50,15 @@ genParserGraphNewickFormat = do
   let (otherNodes,otherEdges) =  unzip children
   let nodes = currentNode: concat otherNodes
   let edges = concat otherEdges
-  return (mkGraph nodes edges)
+  let filteredEdges = nubBy isSameEdge edges
+  return (mkGraph nodes filteredEdges)
 
+isSameEdge :: (Int,Int,Double) -> (Int,Int,Double) -> Bool
+isSameEdge (a,b,_) (c,d,_)
+  | a == c && b == d = True
+  | a == d && b == c = True
+  | otherwise = False
+        
 genParserGraphNode :: Int -> GenParser Char Int ([(Int, String)],[(Int,Int,Double)])
 genParserGraphNode parentNodeIndex = do
   optional (try (char ','))
@@ -60,7 +67,7 @@ genParserGraphNode parentNodeIndex = do
   setState (currentIndex + 1)
   children <- many1 (choice [try (genParserGraphLeaf currentIndex), try (genParserGraphInternal currentIndex),try (genParserGraphNode currentIndex)])
   char ')'
-  nodeId <- try (many1 (choice [alphaNum, oneOf ".\\/|_-"]))
+  nodeId <- try (many1 (choice [alphaNum, oneOf " .\\/|_-"]))
   edgeDistance <- genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   let currentNode = (currentIndex,nodeId)
@@ -90,7 +97,7 @@ genParserGraphInternal parentNodeIndex = do
 genParserGraphLeaf :: Int -> GenParser Char Int ([(Int, String)],[(Int,Int,Double)])
 genParserGraphLeaf parentNodeIndex = do
   optional (try (char ','))
-  nodeId <- try (many1 (choice [alphaNum, oneOf ".\\/|_-"]))
+  nodeId <- try (many1 (choice [alphaNum, oneOf " .\\/|_-"]))
   edgeDistance <- try genParserEdgeDistance
   choice [try (lookAhead (char ',')), try (lookAhead (char ')')), try (lookAhead (char '(')), try (lookAhead (char ';'))]
   currentIndex <- getState
